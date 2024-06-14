@@ -2,6 +2,14 @@
 
 Demo on what a GraphRAG setup can look like.
 
+## Data model
+
+![the data model](media/data-model.png)
+
+## Data visualization
+
+![the data](media/data.png)
+
 ## Setup
 
 ### Install deps
