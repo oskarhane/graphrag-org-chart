@@ -58,3 +58,5 @@ python src/main.py
 ```
 
 and ask questions in the CLI. Exit at any time by pressing `Ctrl+c`.
+
+![interaction](media/cli.png)
