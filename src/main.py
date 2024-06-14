@@ -26,17 +26,25 @@ def main(user_input = None):
         rw = Rewriter(llm)
         while True:
             question = rw.rewrite(user_input, existing_data[-5:])
-            result, _ = retriver.search(question)
+            result = retriver.search(question, examples=[
+                "Who is the manager of team X?\nMATCH (team:Team)<-[:MEMBER_OF]-(:Person)<-[:MANAGES]-(m:Manager) WHERE toLower(team.name) = toLower('X') RETURN DISTINCT m.name AS teamManager, team.name AS teamName", 
+                "Who are the managers of the team that XYZ works in?\nMATCH (person:Person)-[:MEMBER_OF]->(:Team)<-[:MEMBER_OF]-(:Person)<-[:MANAGES]-(m:Manager) WHERE toLower(person.name) = toLower('XYZ') RETURN DISTINCT m.name AS teamManagers, person.name AS personName", 
+                "What is the name of the team that has the most members?\nMATCH (t:Team)<-[:MEMBER_OF]-(m:Member) RETURN t.name AS teamName ORDER BY COUNT(m) DESC LIMIT 1", 
+                "Who is AAA managing?\n(m:Manager)-[:MANAGES]->(p:Person) WHERE toLower(m.name) = toLower('AAA') RETURN p.name as managedPerson, m.name as theManager", 
+                "Who is AAA's manager?\n(m:Manager)-[:MANAGES]->(p:Person) WHERE toLower(p.name) = toLower('AAA') RETURN m.name as theManager, p.name as thePerson", 
+                ])
+            result_list = ", ".join(list(map(lambda item: item.content, result.items)))
             generation_messages = [
-                {"role": "system", "content": "You're a helpful assistant that answers questions by only using the information provided to you. If there's no answer to the question provided, you say just that there is no answer available. Do not use any of your implicit knowledge. Answer with a relaxed surfer tone and attitude."},
+                {"role": "system", "content": "You're a helpful assistant that answers questions by only using the information provided to you. If there's no answer to the question provided, you say just that there is no answer available. Do not use any of your implicit knowledge. Answer with a relaxed surfer tone and attitude, but don't repeat ending phrases."},
                 {"role": "assistant", "content": f"Here's a history of user exchanged messages and ansers to give you some extra context: {[f'{x[0]}: {x[1]}' for x in existing_data]}"},
-                {"role": "assistant", "content": f"The information retrieved to respond to the user input is: '''{result}'''"},
+                {"role": "assistant", "content": f"The information retrieved to respond to the user input is. If there is anything here it is relevant to the question. '''{result_list}'''"},
                 {"role": "user", "content": f"The user input: '''\n{question}\n''''"},
             ]
+            
             response = llm.invoke(generation_messages)
             print(f"🏄‍♀️: {response.content}\n")
             existing_data.append((question, response.content))
-            user_input = input("Anything else you want to ask about the Engineering org?\n🗣️ -> ")
+            user_input = input("\n🗣️ -> ")
 
 
 
